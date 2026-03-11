@@ -467,11 +467,14 @@ function signOut() {
   auth.signOut();
 }
 
-// 리디렉션 로그인 결과 처리
-auth.getRedirectResult().catch(e => {
-  if (e.code && e.code !== 'auth/no-auth-event') {
-    console.warn('redirect error:', e.message);
+// 리디렉션 로그인 결과 처리 (반드시 onAuthStateChanged 보다 먼저)
+auth.getRedirectResult().then(result => {
+  if (result && result.user) {
+    // 리디렉션 후 user가 있으면 onAuthStateChanged가 자동으로 처리
+    console.log('redirect login success:', result.user.email);
   }
+}).catch(e => {
+  console.warn('redirect result error:', e.code, e.message);
 });
 
 auth.onAuthStateChanged(user => {

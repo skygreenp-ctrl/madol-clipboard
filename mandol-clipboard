@@ -1,1 +1,769 @@
 
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>클립보드</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+
+
+<style>
+  :root {
+    --bg:       #0d0d10;
+    --surf:     #17171d;
+    --surf2:    #1f1f28;
+    --surf3:    #27272f;
+    --border:   #2c2c38;
+    --accent:   #4f8eff;
+    --accent2:  #7b5fff;
+    --success:  #3ecf8e;
+    --danger:   #ff5f7e;
+    --warn:     #ffcc44;
+    --text:     #e6e6f0;
+    --text2:    #8888a0;
+    --text3:    #48485a;
+    --safe-t:   env(safe-area-inset-top,    0px);
+    --safe-b:   env(safe-area-inset-bottom, 0px);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+  body{
+    background:var(--bg);color:var(--text);
+    font-family:'Noto Sans KR',sans-serif;
+    height:100dvh;overflow:hidden;
+  }
+
+  /* ══ LOGIN SCREEN ═══════════════════════════ */
+  #loginScreen{
+    position:fixed;inset:0;z-index:9000;
+    background:var(--bg);
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    gap:0;
+    padding:40px 32px;
+  }
+  .login-icon{
+    width:72px;height:72px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    border-radius:22px;
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:28px;
+    box-shadow:0 8px 32px rgba(79,142,255,.35);
+  }
+  .login-title{
+    font-size:26px;font-weight:700;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    margin-bottom:8px;
+  }
+  .login-sub{font-size:14px;color:var(--text2);margin-bottom:48px;text-align:center;line-height:1.6}
+  .google-btn{
+    display:flex;align-items:center;gap:12px;
+    background:#fff;color:#1f1f1f;
+    border:none;border-radius:14px;
+    padding:14px 24px;font-size:15px;font-weight:600;
+    cursor:pointer;width:100%;max-width:300px;
+    justify-content:center;
+    box-shadow:0 4px 20px rgba(0,0,0,.4);
+    transition:transform .1s,box-shadow .15s;
+  }
+  .google-btn:active{transform:scale(.97);box-shadow:0 2px 10px rgba(0,0,0,.3)}
+  .google-btn svg{flex-shrink:0}
+  .login-note{font-size:11px;color:var(--text3);margin-top:20px;text-align:center;line-height:1.7}
+
+  /* ══ HEADER ══════════════════════════════════ */
+  .header{
+    position:fixed;top:0;left:0;right:0;
+    height:calc(56px + var(--safe-t));
+    padding-top:var(--safe-t);
+    background:linear-gradient(180deg,#0d0d10 80%,transparent);
+    display:flex;align-items:center;justify-content:space-between;
+    padding-left:14px;padding-right:14px;
+    z-index:100;
+  }
+  .header-left{display:flex;align-items:center;gap:10px}
+  .header-title{
+    font-size:16px;font-weight:700;letter-spacing:.02em;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  }
+  .board-badge{
+    font-size:11px;font-family:'JetBrains Mono',monospace;
+    color:var(--text2);background:var(--surf2);
+    border:1px solid var(--border);border-radius:20px;
+    padding:3px 9px;letter-spacing:.04em;
+  }
+  .header-right{display:flex;align-items:center;gap:8px}
+
+  .hbg{
+    width:36px;height:36px;background:var(--surf);
+    border:1px solid var(--border);border-radius:10px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:4px;cursor:pointer;transition:background .15s;
+  }
+  .hbg:active{background:var(--surf2)}
+  .hbg span{display:block;width:16px;height:1.5px;background:var(--text);border-radius:2px;transition:all .25s cubic-bezier(.4,0,.2,1)}
+  .hbg.open span:nth-child(1){transform:rotate(45deg) translate(4px,4px)}
+  .hbg.open span:nth-child(2){opacity:0;transform:scaleX(0)}
+  .hbg.open span:nth-child(3){transform:rotate(-45deg) translate(4px,-4px)}
+
+  .avatar{
+    width:34px;height:34px;border-radius:50%;
+    object-fit:cover;border:2px solid var(--border);
+    cursor:pointer;
+  }
+  .avatar-placeholder{
+    width:34px;height:34px;border-radius:50%;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    display:flex;align-items:center;justify-content:center;
+    font-size:14px;font-weight:700;color:#fff;
+    cursor:pointer;border:2px solid var(--border);
+    flex-shrink:0;
+  }
+
+  /* ══ SIDEBAR ═════════════════════════════════ */
+  .overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,.65);
+    backdrop-filter:blur(4px);z-index:200;
+    opacity:0;pointer-events:none;transition:opacity .25s;
+  }
+  .overlay.open{opacity:1;pointer-events:all}
+
+  .sidebar{
+    position:fixed;top:0;left:0;bottom:0;width:265px;
+    background:var(--surf);border-right:1px solid var(--border);
+    z-index:210;transform:translateX(-100%);
+    transition:transform .3s cubic-bezier(.4,0,.2,1);
+    display:flex;flex-direction:column;
+    padding-top:calc(var(--safe-t)+8px);
+    padding-bottom:calc(var(--safe-b)+8px);
+  }
+  .sidebar.open{transform:translateX(0)}
+
+  .sb-head{
+    padding:14px 18px 12px;
+    border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .sb-head h2{font-size:12px;font-weight:500;color:var(--text2);letter-spacing:.1em;text-transform:uppercase}
+
+  .sb-user{
+    display:flex;align-items:center;gap:10px;
+    padding:12px 18px 0;
+    border-top:1px solid var(--border);
+    margin-top:auto;
+  }
+  .sb-user-info{flex:1;min-width:0}
+  .sb-user-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sb-user-email{font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .logout-btn{
+    font-size:11px;color:var(--danger);
+    background:none;border:1px solid rgba(255,95,126,.3);
+    border-radius:8px;padding:5px 10px;
+    cursor:pointer;white-space:nowrap;
+    transition:background .15s;flex-shrink:0;
+  }
+  .logout-btn:active{background:rgba(255,95,126,.1)}
+
+  .board-list{flex:1;overflow-y:auto;padding:8px 10px}
+  .board-item{
+    display:flex;align-items:center;gap:10px;
+    padding:10px 11px;border-radius:10px;cursor:pointer;
+    transition:background .15s;margin-bottom:2px;
+  }
+  .board-item:active,.board-item:hover{background:var(--surf2)}
+  .board-item.active{
+    background:linear-gradient(135deg,rgba(79,142,255,.14),rgba(123,95,255,.09));
+    border:1px solid rgba(79,142,255,.22);
+  }
+  .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .d0{background:#4f8eff}.d1{background:#ff7eb3}.d2{background:#3ecf8e}
+  .d3{background:#ffcc44}.d4{background:#ff6b6b}.d5{background:#a78bfa}
+  .d6{background:#38bdf8}.d7{background:#fb923c}.d8{background:#e879f9}.d9{background:#94a3b8}
+
+  .bi-info{flex:1;min-width:0}
+  .bi-name{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bi-count{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:1px}
+  .board-item.active .bi-name{color:var(--accent)}
+  .board-item.active .bi-count{color:var(--text2)}
+
+  /* ══ MAIN ════════════════════════════════════ */
+  .main{height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+  .safe-top{height:calc(56px + var(--safe-t));flex-shrink:0}
+  .safe-bot{height:calc(68px + var(--safe-b));flex-shrink:0}
+
+  .scroll-area{
+    flex:1;overflow-y:auto;padding:6px 13px;
+    -webkit-overflow-scrolling:touch;
+  }
+  .scroll-area::-webkit-scrollbar{width:3px}
+  .scroll-area::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+  /* ══ INPUT BAR ═══════════════════════════════ */
+  .input-bar{
+    position:fixed;bottom:0;left:0;right:0;
+    padding:10px 13px calc(10px + var(--safe-b));
+    background:linear-gradient(0deg,#0d0d10 75%,transparent);
+    display:flex;gap:8px;align-items:flex-end;z-index:100;
+  }
+  .input-wrap{
+    flex:1;background:var(--surf);
+    border:1px solid var(--border);border-radius:14px;
+    display:flex;align-items:flex-end;padding:10px 12px;gap:8px;
+    transition:border-color .2s;
+  }
+  .input-wrap:focus-within{
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(79,142,255,.08);
+  }
+  textarea.ti{
+    flex:1;background:none;border:none;outline:none;
+    color:var(--text);font-family:'Noto Sans KR',sans-serif;
+    font-size:14px;line-height:1.5;resize:none;
+    max-height:100px;min-height:22px;overflow-y:auto;
+  }
+  textarea.ti::placeholder{color:var(--text3)}
+
+  .paste-btn{
+    width:30px;height:30px;background:none;border:none;
+    color:var(--text3);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    border-radius:8px;transition:color .15s,background .15s;flex-shrink:0;
+  }
+  .paste-btn:active{color:var(--accent);background:rgba(79,142,255,.1)}
+
+  .add-btn{
+    width:44px;height:44px;flex-shrink:0;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    border:none;border-radius:14px;color:#fff;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 4px 16px rgba(79,142,255,.35);
+    transition:transform .1s,box-shadow .15s;
+  }
+  .add-btn:active{transform:scale(.93);box-shadow:0 2px 8px rgba(79,142,255,.2)}
+
+  /* ══ CLIP CARDS ══════════════════════════════ */
+  .clip-card{
+    background:var(--surf);border:1px solid var(--border);
+    border-radius:14px;margin-bottom:8px;overflow:hidden;
+    animation:slideIn .2s ease-out;transition:border-color .15s;
+  }
+  @keyframes slideIn{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+
+  .cc-inner{
+    padding:12px 13px;cursor:pointer;
+    display:flex;align-items:flex-start;gap:9px;
+  }
+  .cc-text{
+    flex:1;font-size:13.5px;line-height:1.6;color:var(--text);
+    word-break:break-all;max-height:72px;overflow:hidden;
+    position:relative;
+  }
+  .cc-text.exp{max-height:none}
+  .cc-text.fade::after{
+    content:'';position:absolute;bottom:0;left:0;right:0;
+    height:24px;background:linear-gradient(transparent,var(--surf));
+  }
+  .cc-text.exp::after{display:none}
+
+  .cc-acts{display:flex;align-items:center;gap:1px;flex-shrink:0;padding-top:1px}
+  .ib{
+    width:30px;height:30px;border:none;background:none;
+    color:var(--text3);cursor:pointer;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    transition:all .15s;
+  }
+  .ib:active{background:var(--surf2);transform:scale(.88)}
+  .ib.cp:active{color:var(--success)}
+  .ib.dl:active{color:var(--danger)}
+
+  .cc-foot{
+    padding:0 13px 10px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .cc-time{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+  .tap-hint{font-size:10px;color:var(--text3);display:flex;align-items:center;gap:3px;opacity:.7}
+
+  /* ══ SYNC INDICATOR ══════════════════════════ */
+  .sync-dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--success);flex-shrink:0;
+    transition:background .3s;
+  }
+  .sync-dot.syncing{background:var(--warn);animation:pulse .8s infinite alternate}
+  .sync-dot.offline{background:var(--danger)}
+  @keyframes pulse{to{opacity:.3}}
+
+  /* ══ TOAST ═══════════════════════════════════ */
+  .toast{
+    position:fixed;top:calc(60px + var(--safe-t));
+    left:50%;transform:translateX(-50%) translateY(-8px) scale(.9);
+    background:var(--surf2);border:1px solid var(--border);
+    color:var(--text);font-size:13px;font-weight:500;
+    padding:9px 20px;border-radius:30px;z-index:999;
+    opacity:0;pointer-events:none;white-space:nowrap;
+    letter-spacing:.03em;
+    transition:none;
+  }
+  .toast.show{animation:toastAnim 1.6s ease forwards}
+  .toast.success{border-color:rgba(62,207,142,.4);color:var(--success)}
+  .toast.error{border-color:rgba(255,95,126,.4);color:var(--danger)}
+  @keyframes toastAnim{
+    0%  {opacity:0;transform:translateX(-50%) translateY(-8px) scale(.9)}
+    15% {opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
+    75% {opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
+    100%{opacity:0;transform:translateX(-50%) translateY(-4px) scale(.95)}
+  }
+
+  /* ══ EMPTY ═══════════════════════════════════ */
+  .empty{
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    height:200px;gap:10px;color:var(--text3);pointer-events:none;
+  }
+  .empty svg{opacity:.25}
+  .empty p{font-size:13px;opacity:.55}
+
+  /* ══ LOADING ═════════════════════════════════ */
+  .loading{
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    height:200px;gap:14px;color:var(--text2);
+  }
+  .spinner{
+    width:28px;height:28px;border:2.5px solid var(--border);
+    border-top-color:var(--accent);border-radius:50%;
+    animation:spin .7s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading p{font-size:13px}
+
+  .board-list::-webkit-scrollbar{width:2px}
+  .board-list::-webkit-scrollbar-thumb{background:var(--border)}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN SCREEN ══════════════════════════════ -->
+<div id="loginScreen">
+  <div class="login-icon">
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2"/>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+    </svg>
+  </div>
+  <div class="login-title">클립보드</div>
+  <div class="login-sub">Google 계정으로 로그인하면<br>모든 기기에서 클립을 동기화해요</div>
+  <button class="google-btn" onclick="signInWithGoogle()">
+    <svg width="20" height="20" viewBox="0 0 48 48">
+      <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.3-.4-3.5z"/>
+      <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+      <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.5 26.8 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
+      <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.4 4.3-4.4 5.6l6.2 5.2C36.9 36.2 44 31 44 24c0-1.2-.1-2.3-.4-3.5z"/>
+    </svg>
+    Google로 로그인
+  </button>
+  <div class="login-note">로그인 시 클립 데이터가 안전하게<br>클라우드에 저장됩니다</div>
+</div>
+
+<!-- ══ HEADER ════════════════════════════════════ -->
+<div class="header" id="header" style="display:none">
+  <button class="hbg" id="menuBtn" onclick="toggleSidebar()">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="header-left">
+    <div class="header-title" id="headerTitle">보드 1</div>
+    <div class="sync-dot" id="syncDot" title="동기화 상태"></div>
+  </div>
+  <div class="header-right">
+    <div class="board-badge" id="headerBadge">0개</div>
+    <div id="avatarWrap"></div>
+  </div>
+</div>
+
+<!-- ══ SIDEBAR ═══════════════════════════════════ -->
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+<div class="sidebar" id="sidebar">
+  <div class="sb-head">
+    <h2>📋 보드 목록</h2>
+  </div>
+  <div class="board-list" id="boardList"></div>
+  <div class="sb-user" id="sbUser"></div>
+</div>
+
+<!-- ══ MAIN ══════════════════════════════════════ -->
+<div class="main" id="mainArea" style="display:none">
+  <div class="safe-top"></div>
+  <div class="scroll-area" id="scrollArea">
+    <div id="cardContainer"></div>
+  </div>
+  <div class="safe-bot"></div>
+</div>
+
+<!-- ══ INPUT BAR ══════════════════════════════════ -->
+<div class="input-bar" id="inputBar" style="display:none">
+  <div class="input-wrap">
+    <textarea class="ti" id="ti" placeholder="클립 내용 입력..." rows="1"
+      oninput="autoResize(this)"></textarea>
+    <button class="paste-btn" onclick="pasteFromClipboard()" title="붙여넣기">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="9" y="9" width="13" height="13" rx="2"/>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+      </svg>
+    </button>
+  </div>
+  <button class="add-btn" onclick="addClip()">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+  </button>
+</div>
+
+<!-- ══ TOAST ══════════════════════════════════════ -->
+<div class="toast" id="toast"></div>
+
+<!-- Firebase SDK (반드시 메인 스크립트 앞에 위치) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+// ══ FIREBASE CONFIG ═══════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyD-QGm_RTWwE34c6QgbjwpBZ1EtBiIOBWU",
+  authDomain: "clipboard-3da88.firebaseapp.com",
+  projectId: "clipboard-3da88",
+  storageBucket: "clipboard-3da88.firebasestorage.app",
+  messagingSenderId: "59341987307",
+  appId: "1:59341987307:web:bb15948c084b2eee6d0dae",
+  measurementId: "G-5WYRLKFF1H"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+// ══ STATE ═════════════════════════════════════════
+const BOARD_NAMES = [
+  '보드 1','보드 2','보드 3','보드 4','보드 5',
+  '보드 6','보드 7','보드 8','보드 9','보드 10'
+];
+let currentUser  = null;
+let currentBoard = 0;
+let boards       = Array.from({length:10}, () => []);  // local cache
+let unsubscribe  = null;  // Firestore listener
+
+// ══ AUTH ══════════════════════════════════════════
+function signInWithGoogle() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch(e => {
+    showToast('로그인 실패: ' + e.message, 'error');
+  });
+}
+
+function signOut() {
+  if (unsubscribe) unsubscribe();
+  auth.signOut();
+}
+
+auth.onAuthStateChanged(user => {
+  if (user) {
+    currentUser = user;
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('header').style.display      = '';
+    document.getElementById('mainArea').style.display    = '';
+    document.getElementById('inputBar').style.display    = '';
+    setupAvatar(user);
+    setupUser(user);
+    currentBoard = parseInt(localStorage.getItem('cb_board_'+user.uid) || '0');
+    listenBoard(currentBoard);
+    renderSidebar();
+    updateHeader();
+  } else {
+    currentUser = null;
+    document.getElementById('loginScreen').style.display = '';
+    document.getElementById('header').style.display      = 'none';
+    document.getElementById('mainArea').style.display    = 'none';
+    document.getElementById('inputBar').style.display    = 'none';
+  }
+});
+
+// ══ FIRESTORE HELPERS ════════════════════════════
+function colRef(boardIdx) {
+  return db.collection('users').doc(currentUser.uid)
+           .collection('boards').doc('board_' + boardIdx)
+           .collection('clips');
+}
+
+function listenBoard(boardIdx) {
+  setSyncDot('syncing');
+  if (unsubscribe) unsubscribe();
+  showLoading();
+
+  unsubscribe = colRef(boardIdx)
+    .orderBy('ts', 'desc')
+    .onSnapshot(snap => {
+      boards[boardIdx] = snap.docs.map(d => ({id: d.id, ...d.data()}));
+      renderCards();
+      updateSidebarCount(boardIdx);
+      updateHeader();
+      setSyncDot('ok');
+    }, err => {
+      setSyncDot('offline');
+      showToast('동기화 오류: ' + err.message, 'error');
+    });
+}
+
+async function addClipToFirestore(text) {
+  setSyncDot('syncing');
+  try {
+    await colRef(currentBoard).add({ text, ts: firebase.firestore.FieldValue.serverTimestamp() });
+    setSyncDot('ok');
+  } catch(e) {
+    setSyncDot('offline');
+    showToast('저장 실패', 'error');
+  }
+}
+
+async function deleteClipFromFirestore(docId) {
+  setSyncDot('syncing');
+  try {
+    await colRef(currentBoard).doc(docId).delete();
+    setSyncDot('ok');
+  } catch(e) {
+    setSyncDot('offline');
+    showToast('삭제 실패', 'error');
+  }
+}
+
+// ══ SIDEBAR ══════════════════════════════════════
+function renderSidebar() {
+  const list = document.getElementById('boardList');
+  list.innerHTML = BOARD_NAMES.map((name, i) => `
+    <div class="board-item ${i===currentBoard?'active':''}" onclick="switchBoard(${i})">
+      <div class="dot d${i}"></div>
+      <div class="bi-info">
+        <div class="bi-name">${name}</div>
+        <div class="bi-count" id="sbc-${i}">${boards[i].length}개 항목</div>
+      </div>
+      ${i===currentBoard ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4f8eff" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>` : ''}
+    </div>`).join('');
+}
+
+function updateSidebarCount(i) {
+  const el = document.getElementById('sbc-' + i);
+  if (el) el.textContent = boards[i].length + '개 항목';
+}
+
+function switchBoard(i) {
+  currentBoard = i;
+  localStorage.setItem('cb_board_' + currentUser.uid, i);
+  listenBoard(i);
+  renderSidebar();
+  updateHeader();
+  closeSidebar();
+}
+
+function toggleSidebar() {
+  const s = document.getElementById('sidebar');
+  const o = document.getElementById('overlay');
+  const b = document.getElementById('menuBtn');
+  if (s.classList.contains('open')) { closeSidebar(); return; }
+  renderSidebar();
+  s.classList.add('open'); o.classList.add('open'); b.classList.add('open');
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('menuBtn').classList.remove('open');
+}
+
+// ══ HEADER ═══════════════════════════════════════
+function updateHeader() {
+  document.getElementById('headerTitle').textContent = BOARD_NAMES[currentBoard];
+  document.getElementById('headerBadge').textContent = boards[currentBoard].length + '개';
+}
+
+function setupAvatar(user) {
+  const wrap = document.getElementById('avatarWrap');
+  if (user.photoURL) {
+    wrap.innerHTML = `<img class="avatar" src="${user.photoURL}" alt="프로필" onclick="confirmLogout()">`;
+  } else {
+    const initial = (user.displayName||user.email||'?')[0].toUpperCase();
+    wrap.innerHTML = `<div class="avatar-placeholder" onclick="confirmLogout()">${initial}</div>`;
+  }
+}
+
+function setupUser(user) {
+  const el = document.getElementById('sbUser');
+  const photo = user.photoURL
+    ? `<img class="avatar" src="${user.photoURL}" alt="프로필" style="width:32px;height:32px">`
+    : `<div class="avatar-placeholder" style="width:32px;height:32px;font-size:13px">${(user.displayName||'?')[0].toUpperCase()}</div>`;
+  el.innerHTML = `
+    ${photo}
+    <div class="sb-user-info">
+      <div class="sb-user-name">${user.displayName || '사용자'}</div>
+      <div class="sb-user-email">${user.email || ''}</div>
+    </div>
+    <button class="logout-btn" onclick="confirmLogout()">로그아웃</button>`;
+}
+
+function confirmLogout() {
+  if (confirm('로그아웃 하시겠어요?')) signOut();
+}
+
+// ══ SYNC DOT ══════════════════════════════════════
+function setSyncDot(state) {
+  const d = document.getElementById('syncDot');
+  d.className = 'sync-dot' + (state==='syncing' ? ' syncing' : state==='offline' ? ' offline' : '');
+  d.title = state==='syncing' ? '동기화 중...' : state==='offline' ? '오프라인' : '동기화됨';
+}
+
+// ══ CARDS ════════════════════════════════════════
+function showLoading() {
+  document.getElementById('cardContainer').innerHTML = `
+    <div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div>`;
+}
+
+function renderCards() {
+  const container = document.getElementById('cardContainer');
+  const clips = boards[currentBoard];
+
+  if (!clips.length) {
+    container.innerHTML = `
+      <div class="empty">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
+          <rect x="9" y="9" width="13" height="13" rx="2"/>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>
+        <p>저장된 클립이 없습니다</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = clips.map((clip, i) => {
+    const long = clip.text.length > 90;
+    return `
+    <div class="clip-card" id="card-${i}">
+      <div class="cc-inner" onclick="copyClip(${i})">
+        <div class="cc-text ${long?'fade':''}" id="ct-${i}">${escHtml(clip.text)}</div>
+        <div class="cc-acts">
+          <button class="ib cp" onclick="event.stopPropagation();copyClip(${i})" title="복사">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+          </button>
+          ${long ? `<button class="ib" onclick="event.stopPropagation();toggleExp(${i})" id="eb-${i}" title="펼치기">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>` : ''}
+          <button class="ib dl" onclick="event.stopPropagation();deleteClip(${i})" title="삭제">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="cc-foot">
+        <span class="cc-time">${formatTime(clip.ts)}</span>
+        <span class="tap-hint">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          탭하여 복사
+        </span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleExp(i) {
+  const el = document.getElementById('ct-' + i);
+  const btn = document.getElementById('eb-' + i);
+  const isExp = el.classList.contains('exp');
+  el.classList.toggle('exp', !isExp);
+  el.classList.toggle('fade', isExp);
+  btn.innerHTML = isExp
+    ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>`
+    : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>`;
+}
+
+// ══ COPY ══════════════════════════════════════════
+function copyClip(i) {
+  const text = boards[currentBoard][i]?.text;
+  if (!text) return;
+  navigator.clipboard.writeText(text).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+  });
+  showToast('✓ 복사됨', 'success');
+  const card = document.getElementById('card-' + i);
+  if (card) {
+    card.style.borderColor = 'var(--success)';
+    card.style.boxShadow = '0 0 0 2px rgba(62,207,142,.12)';
+    setTimeout(() => { card.style.borderColor=''; card.style.boxShadow=''; }, 700);
+  }
+}
+
+// ══ ADD / DELETE ══════════════════════════════════
+function addClip() {
+  const inp = document.getElementById('ti');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = ''; inp.style.height = 'auto';
+  addClipToFirestore(text);
+}
+
+function deleteClip(i) {
+  const clip = boards[currentBoard][i];
+  if (!clip?.id) return;
+  deleteClipFromFirestore(clip.id);
+}
+
+// ══ PASTE ════════════════════════════════════════
+async function pasteFromClipboard() {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (text) { document.getElementById('ti').value = text; autoResize(document.getElementById('ti')); }
+  } catch { document.getElementById('ti').focus(); }
+}
+
+// ══ UTILS ════════════════════════════════════════
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function formatTime(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const diff = (Date.now() - d) / 1000;
+  if (diff < 60)    return '방금 전';
+  if (diff < 3600)  return Math.floor(diff/60) + '분 전';
+  if (diff < 86400) return Math.floor(diff/3600) + '시간 전';
+  return `${d.getMonth()+1}.${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (type ? ' '+type : '');
+  void t.offsetWidth;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1700);
+}
+
+// Enter to add
+document.getElementById('ti').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addClip(); }
+});
+</script>
+</body>
+</html>

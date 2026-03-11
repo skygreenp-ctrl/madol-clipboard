@@ -457,8 +457,10 @@ let unsubscribe  = null;  // Firestore listener
 // ══ AUTH ══════════════════════════════════════════
 function signInWithGoogle() {
   const provider = new firebase.auth.GoogleAuthProvider();
+  // 로딩 표시
+  document.querySelector('.google-btn').textContent = '로그인 중...';
   auth.signInWithRedirect(provider).catch(e => {
-    showToast('로그인 실패: ' + e.message, 'error');
+    alert('로그인 실패: ' + e.message);
   });
 }
 
@@ -467,36 +469,46 @@ function signOut() {
   auth.signOut();
 }
 
-// 리디렉션 로그인 결과 처리 (반드시 onAuthStateChanged 보다 먼저)
+function showApp(user) {
+  currentUser = user;
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('header').style.display      = '';
+  document.getElementById('mainArea').style.display    = '';
+  document.getElementById('inputBar').style.display    = '';
+  setupAvatar(user);
+  setupUser(user);
+  currentBoard = parseInt(localStorage.getItem('cb_board_'+user.uid) || '0');
+  listenBoard(currentBoard);
+  renderSidebar();
+  updateHeader();
+}
+
+function showLogin() {
+  currentUser = null;
+  document.getElementById('loginScreen').style.display = '';
+  document.getElementById('header').style.display      = 'none';
+  document.getElementById('mainArea').style.display    = 'none';
+  document.getElementById('inputBar').style.display    = 'none';
+}
+
+// 리디렉션 결과 먼저 처리 후 auth 상태 감지
 auth.getRedirectResult().then(result => {
   if (result && result.user) {
-    // 리디렉션 후 user가 있으면 onAuthStateChanged가 자동으로 처리
-    console.log('redirect login success:', result.user.email);
+    showApp(result.user);
+  } else {
+    // 리디렉션 결과 없으면 기존 로그인 상태 확인
+    auth.onAuthStateChanged(user => {
+      if (user) { showApp(user); }
+      else { showLogin(); }
+    });
   }
 }).catch(e => {
-  console.warn('redirect result error:', e.code, e.message);
-});
-
-auth.onAuthStateChanged(user => {
-  if (user) {
-    currentUser = user;
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('header').style.display      = '';
-    document.getElementById('mainArea').style.display    = '';
-    document.getElementById('inputBar').style.display    = '';
-    setupAvatar(user);
-    setupUser(user);
-    currentBoard = parseInt(localStorage.getItem('cb_board_'+user.uid) || '0');
-    listenBoard(currentBoard);
-    renderSidebar();
-    updateHeader();
-  } else {
-    currentUser = null;
-    document.getElementById('loginScreen').style.display = '';
-    document.getElementById('header').style.display      = 'none';
-    document.getElementById('mainArea').style.display    = 'none';
-    document.getElementById('inputBar').style.display    = 'none';
-  }
+  console.error('getRedirectResult error:', e);
+  // 에러 시에도 onAuthStateChanged로 fallback
+  auth.onAuthStateChanged(user => {
+    if (user) { showApp(user); }
+    else { showLogin(); }
+  });
 });
 
 // ══ FIRESTORE HELPERS ════════════════════════════

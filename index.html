@@ -57,20 +57,42 @@
     -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
     margin-bottom:8px;
   }
-  .login-sub{font-size:14px;color:var(--text2);margin-bottom:48px;text-align:center;line-height:1.6}
-  .google-btn{
-    display:flex;align-items:center;gap:12px;
-    background:#fff;color:#1f1f1f;
-    border:none;border-radius:14px;
-    padding:14px 24px;font-size:15px;font-weight:600;
-    cursor:pointer;width:100%;max-width:300px;
-    justify-content:center;
-    box-shadow:0 4px 20px rgba(0,0,0,.4);
-    transition:transform .1s,box-shadow .15s;
+  .login-sub{font-size:14px;color:var(--text2);margin-bottom:32px;text-align:center;line-height:1.6}
+
+  /* 이메일/비밀번호 로그인 */
+  .login-form{width:100%;max-width:300px;display:flex;flex-direction:column;gap:10px}
+  .login-input{
+    width:100%;background:var(--surf2);border:1px solid var(--border);
+    border-radius:12px;padding:13px 16px;
+    color:var(--text);font-family:'Noto Sans KR',sans-serif;font-size:14px;
+    outline:none;transition:border-color .2s;
   }
-  .google-btn:active{transform:scale(.97);box-shadow:0 2px 10px rgba(0,0,0,.3)}
-  .google-btn svg{flex-shrink:0}
-  .login-note{font-size:11px;color:var(--text3);margin-top:20px;text-align:center;line-height:1.7}
+  .login-input:focus{border-color:var(--accent)}
+  .login-input::placeholder{color:var(--text3)}
+  .login-submit{
+    width:100%;background:linear-gradient(135deg,var(--accent),var(--accent2));
+    border:none;border-radius:12px;padding:14px;
+    color:#fff;font-size:15px;font-weight:700;
+    cursor:pointer;letter-spacing:.03em;
+    box-shadow:0 4px 20px rgba(79,142,255,.35);
+    transition:transform .1s,box-shadow .15s;margin-top:2px;
+  }
+  .login-submit:active{transform:scale(.97)}
+  .login-submit:disabled{opacity:.5;cursor:not-allowed}
+  .login-divider{
+    display:flex;align-items:center;gap:10px;
+    color:var(--text3);font-size:12px;margin:4px 0;
+  }
+  .login-divider::before,.login-divider::after{
+    content:'';flex:1;height:1px;background:var(--border);
+  }
+  .login-toggle{
+    font-size:12px;color:var(--text2);text-align:center;margin-top:6px;
+  }
+  .login-toggle span{color:var(--accent);cursor:pointer;font-weight:500}
+  .login-toggle span:active{opacity:.7}
+  .login-err{font-size:12px;color:var(--danger);text-align:center;min-height:16px}
+  .login-note{font-size:11px;color:var(--text3);margin-top:16px;text-align:center;line-height:1.7}
 
   /* ══ HEADER ══════════════════════════════════ */
   .header{
@@ -354,17 +376,18 @@
     </svg>
   </div>
   <div class="login-title">클립보드</div>
-  <div class="login-sub">Google 계정으로 로그인하면<br>모든 기기에서 클립을 동기화해요</div>
-  <button class="google-btn" onclick="signInWithGoogle()">
-    <svg width="20" height="20" viewBox="0 0 48 48">
-      <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.3-.4-3.5z"/>
-      <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
-      <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.5 26.8 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
-      <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.4 4.3-4.4 5.6l6.2 5.2C36.9 36.2 44 31 44 24c0-1.2-.1-2.3-.4-3.5z"/>
-    </svg>
-    Google로 로그인
-  </button>
-  <div class="login-note">로그인 시 클립 데이터가 안전하게<br>클라우드에 저장됩니다</div>
+  <div class="login-sub" id="loginSubText">로그인하여 클립을 동기화해요</div>
+
+  <div class="login-form" id="loginForm">
+    <input class="login-input" type="email" id="loginEmail" placeholder="이메일" autocomplete="email">
+    <input class="login-input" type="password" id="loginPassword" placeholder="비밀번호" autocomplete="current-password">
+    <div class="login-err" id="loginErr"></div>
+    <button class="login-submit" id="loginSubmitBtn" onclick="submitAuth()">로그인</button>
+    <div class="login-toggle" id="loginToggle">
+      계정이 없나요? <span onclick="toggleAuthMode()">회원가입</span>
+    </div>
+  </div>
+  <div class="login-note">이메일과 비밀번호로 안전하게 로그인</div>
 </div>
 
 <!-- ══ HEADER ════════════════════════════════════ -->
@@ -455,22 +478,60 @@ let boards       = Array.from({length:10}, () => []);  // local cache
 let unsubscribe  = null;  // Firestore listener
 
 // ══ AUTH ══════════════════════════════════════════
-function signInWithGoogle() {
-  const provider = new firebase.auth.GoogleAuthProvider();
-  const btn = document.querySelector('.google-btn');
-  btn.disabled = true;
-  btn.innerHTML = `<span style="opacity:.6">로그인 중...</span>`;
+let authMode = 'login'; // 'login' | 'signup'
 
-  auth.signInWithPopup(provider)
-    .then(result => { /* onAuthStateChanged가 처리 */ })
-    .catch(e => {
-      btn.disabled = false;
-      btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.3-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.5 26.8 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.4 4.3-4.4 5.6l6.2 5.2C36.9 36.2 44 31 44 24c0-1.2-.1-2.3-.4-3.5z"/></svg> Google로 로그인`;
-      if (e.code !== 'auth/popup-closed-by-user') {
-        alert('로그인 오류: ' + e.message);
-      }
-    });
+function toggleAuthMode() {
+  authMode = authMode === 'login' ? 'signup' : 'login';
+  const isSignup = authMode === 'signup';
+  document.getElementById('loginSubmitBtn').textContent = isSignup ? '회원가입' : '로그인';
+  document.getElementById('loginSubText').textContent   = isSignup ? '새 계정을 만들어요' : '로그인하여 클립을 동기화해요';
+  document.getElementById('loginToggle').innerHTML      = isSignup
+    ? `이미 계정이 있나요? <span onclick="toggleAuthMode()">로그인</span>`
+    : `계정이 없나요? <span onclick="toggleAuthMode()">회원가입</span>`;
+  document.getElementById('loginErr').textContent = '';
+  document.getElementById('loginPassword').value  = '';
 }
+
+function setLoginError(msg) {
+  document.getElementById('loginErr').textContent = msg;
+}
+
+function submitAuth() {
+  const email    = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const btn      = document.getElementById('loginSubmitBtn');
+
+  if (!email || !password) { setLoginError('이메일과 비밀번호를 입력해주세요'); return; }
+  if (password.length < 6) { setLoginError('비밀번호는 6자 이상이어야 해요'); return; }
+
+  btn.disabled = true;
+  btn.textContent = '처리 중...';
+  setLoginError('');
+
+  const action = authMode === 'signup'
+    ? auth.createUserWithEmailAndPassword(email, password)
+    : auth.signInWithEmailAndPassword(email, password);
+
+  action.catch(e => {
+    btn.disabled = false;
+    btn.textContent = authMode === 'signup' ? '회원가입' : '로그인';
+    const msgs = {
+      'auth/email-already-in-use': '이미 사용 중인 이메일이에요',
+      'auth/invalid-email':        '이메일 형식이 올바르지 않아요',
+      'auth/wrong-password':       '비밀번호가 틀렸어요',
+      'auth/user-not-found':       '등록되지 않은 이메일이에요',
+      'auth/weak-password':        '비밀번호가 너무 짧아요 (6자 이상)',
+      'auth/invalid-credential':   '이메일 또는 비밀번호가 틀렸어요',
+      'auth/too-many-requests':    '잠시 후 다시 시도해주세요',
+    };
+    setLoginError(msgs[e.code] || '오류: ' + e.message);
+  });
+}
+
+// Enter key on password field
+document.getElementById('loginPassword')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitAuth();
+});
 
 function signOut() {
   if (unsubscribe) unsubscribe();
@@ -603,24 +664,18 @@ function updateHeader() {
 
 function setupAvatar(user) {
   const wrap = document.getElementById('avatarWrap');
-  if (user.photoURL) {
-    wrap.innerHTML = `<img class="avatar" src="${user.photoURL}" alt="프로필" onclick="confirmLogout()">`;
-  } else {
-    const initial = (user.displayName||user.email||'?')[0].toUpperCase();
-    wrap.innerHTML = `<div class="avatar-placeholder" onclick="confirmLogout()">${initial}</div>`;
-  }
+  const initial = (user.email || '?')[0].toUpperCase();
+  wrap.innerHTML = `<div class="avatar-placeholder" onclick="confirmLogout()">${initial}</div>`;
 }
 
 function setupUser(user) {
   const el = document.getElementById('sbUser');
-  const photo = user.photoURL
-    ? `<img class="avatar" src="${user.photoURL}" alt="프로필" style="width:32px;height:32px">`
-    : `<div class="avatar-placeholder" style="width:32px;height:32px;font-size:13px">${(user.displayName||'?')[0].toUpperCase()}</div>`;
+  const initial = (user.email || '?')[0].toUpperCase();
   el.innerHTML = `
-    ${photo}
+    <div class="avatar-placeholder" style="width:32px;height:32px;font-size:13px">${initial}</div>
     <div class="sb-user-info">
-      <div class="sb-user-name">${user.displayName || '사용자'}</div>
-      <div class="sb-user-email">${user.email || ''}</div>
+      <div class="sb-user-name">${user.email || '사용자'}</div>
+      <div class="sb-user-email">클립보드 계정</div>
     </div>
     <button class="logout-btn" onclick="confirmLogout()">로그아웃</button>`;
 }

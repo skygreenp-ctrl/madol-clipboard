@@ -457,11 +457,19 @@ let unsubscribe  = null;  // Firestore listener
 // ══ AUTH ══════════════════════════════════════════
 function signInWithGoogle() {
   const provider = new firebase.auth.GoogleAuthProvider();
-  // 로딩 표시
-  document.querySelector('.google-btn').textContent = '로그인 중...';
-  auth.signInWithRedirect(provider).catch(e => {
-    alert('로그인 실패: ' + e.message);
-  });
+  const btn = document.querySelector('.google-btn');
+  btn.disabled = true;
+  btn.innerHTML = `<span style="opacity:.6">로그인 중...</span>`;
+
+  auth.signInWithPopup(provider)
+    .then(result => { /* onAuthStateChanged가 처리 */ })
+    .catch(e => {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.3-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.5 26.8 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.4 4.3-4.4 5.6l6.2 5.2C36.9 36.2 44 31 44 24c0-1.2-.1-2.3-.4-3.5z"/></svg> Google로 로그인`;
+      if (e.code !== 'auth/popup-closed-by-user') {
+        alert('로그인 오류: ' + e.message);
+      }
+    });
 }
 
 function signOut() {
@@ -491,24 +499,9 @@ function showLogin() {
   document.getElementById('inputBar').style.display    = 'none';
 }
 
-// 리디렉션 결과 먼저 처리 후 auth 상태 감지
-auth.getRedirectResult().then(result => {
-  if (result && result.user) {
-    showApp(result.user);
-  } else {
-    // 리디렉션 결과 없으면 기존 로그인 상태 확인
-    auth.onAuthStateChanged(user => {
-      if (user) { showApp(user); }
-      else { showLogin(); }
-    });
-  }
-}).catch(e => {
-  console.error('getRedirectResult error:', e);
-  // 에러 시에도 onAuthStateChanged로 fallback
-  auth.onAuthStateChanged(user => {
-    if (user) { showApp(user); }
-    else { showLogin(); }
-  });
+auth.onAuthStateChanged(user => {
+  if (user) { showApp(user); }
+  else { showLogin(); }
 });
 
 // ══ FIRESTORE HELPERS ════════════════════════════
